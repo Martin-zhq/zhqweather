@@ -186,7 +186,7 @@ public class ChooseAreaFragment extends Fragment {
         } else {
             // 没有数据，则从服务器请求
             int provinceCode = selectedProvince.getProvinceCode();
-            String address = ADDRESS + provinceCode;
+            String address = ADDRESS + "/" + provinceCode;
             queryFromServer(address, CITY);
         }
     }
@@ -213,7 +213,7 @@ public class ChooseAreaFragment extends Fragment {
         } else {
             int provinceCode = selectedProvince.getProvinceCode();
             int cityCode = selectedCity.getCityCode();
-            String address = ADDRESS + provinceCode + "/" + cityCode;
+            String address = ADDRESS + "/" + provinceCode + "/" + cityCode;
             queryFromServer(address, COUNTRY);
         }
     }
