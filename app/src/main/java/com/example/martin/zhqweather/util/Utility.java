@@ -5,6 +5,8 @@ import android.text.TextUtils;
 import com.example.martin.zhqweather.db.City;
 import com.example.martin.zhqweather.db.Country;
 import com.example.martin.zhqweather.db.Province;
+import com.example.martin.zhqweather.gson.Weather;
+import com.google.gson.Gson;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -15,6 +17,8 @@ import org.json.JSONObject;
  */
 
 public class Utility {
+
+    private static final String KEY_HEWEATHER = "HeWeather";
 
     /**
      * 解析和处理服务器返回的省份相关数据
@@ -90,6 +94,23 @@ public class Utility {
             }
         }
         return false;
+    }
+
+    /**
+     * 将返回的JSON数据解析成weather实体类
+     * @param response
+     * @return
+     */
+    public static Weather handleWeatherResponse(String response) {
+        try {
+            JSONObject jsonObject = new JSONObject(response);
+            JSONArray jsonArray = jsonObject.getJSONArray(KEY_HEWEATHER);
+            String weatherContent = jsonArray.getJSONObject(0).toString();
+            return new Gson().fromJson(weatherContent, Weather.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
 
