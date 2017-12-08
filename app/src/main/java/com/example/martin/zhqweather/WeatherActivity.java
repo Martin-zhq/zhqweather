@@ -1,16 +1,20 @@
 package com.example.martin.zhqweather;
 
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.os.Build;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.example.martin.zhqweather.gson.Forecast;
 import com.example.martin.zhqweather.gson.Weather;
 import com.example.martin.zhqweather.util.HttpUtil;
@@ -29,6 +33,8 @@ public class WeatherActivity extends AppCompatActivity {
 
     public static final String KEY_WEATHER = "weather";
 
+    public static final String KEY_BING_PIC = "bing_pic";
+
     private static final String KEY_OK = "ok";
 
     public static final String BUNDLE_WEATHER_ID = "weather_id";
@@ -42,6 +48,8 @@ public class WeatherActivity extends AppCompatActivity {
     private static final String CAR_WASH_TIP = "洗车指数：";
 
     private static final String SPoRT_TIP = "运动建议：";
+
+    private static final int SDK_INT = 21;
 
     private ScrollView scvWeatherLayout;
 
@@ -65,9 +73,20 @@ public class WeatherActivity extends AppCompatActivity {
 
     private TextView tvSport;
 
+    private ImageView ivBingPic;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //判断是否显示状态栏  sdk大于21，即android系统为5.0之上的系统才会执行
+        if (Build.VERSION.SDK_INT >= SDK_INT) {
+            View decorView = getWindow().getDecorView();
+            //活动的布局会显示在状态栏上面
+            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+            //将状态栏设置成透明色
+            getWindow().setStatusBarColor(Color.TRANSPARENT);
+        }
         setContentView(R.layout.activity_weather);
         //初始化控件
         initViews();
@@ -83,6 +102,13 @@ public class WeatherActivity extends AppCompatActivity {
             scvWeatherLayout.setVisibility(View.GONE);
             requestWeather(weatherId);
         }
+        //从缓存中取出背景图片路径
+        String bingPic = prefs.getString(KEY_BING_PIC, null);
+        if (bingPic != null) {
+            Glide.with(this).load(bingPic).into(ivBingPic);
+        } else {
+            loadBingPic();
+        }
     }
 
     private void initViews() {
@@ -97,6 +123,7 @@ public class WeatherActivity extends AppCompatActivity {
         tvComfort = findViewById(R.id.tv_comfort);
         tvCarWash = findViewById(R.id.tv_car_wash);
         tvSport = findViewById(R.id.tv_sport);
+        ivBingPic = findViewById(R.id.iv_bing_pic);
     }
 
     /**
@@ -149,6 +176,8 @@ public class WeatherActivity extends AppCompatActivity {
                 });
             }
         });
+        //每次请求天气信息的同时刷新背景图片
+        loadBingPic();
     }
 
     /**
@@ -194,4 +223,33 @@ public class WeatherActivity extends AppCompatActivity {
         tvSport.setText(sport);
         scvWeatherLayout.setVisibility(View.VISIBLE);
     }
+
+    /**
+     * 从服务器读取图片路径
+     */
+    private void loadBingPic() {
+        String requestBingPic = "http://guolin.tech/api/bing_pic";
+        HttpUtil.sendOkHttpRequest(requestBingPic, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                final String bingPic = response.body().string();
+                SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this)
+                        .edit();
+                editor.putString(KEY_BING_PIC, bingPic);
+                editor.apply();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Glide.with(WeatherActivity.this).load(bingPic).into(ivBingPic);
+                    }
+                });
+            }
+        });
+    }
+
 }
