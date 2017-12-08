@@ -4,6 +4,7 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -47,9 +48,11 @@ public class WeatherActivity extends AppCompatActivity {
 
     private static final String CAR_WASH_TIP = "洗车指数：";
 
-    private static final String SPoRT_TIP = "运动建议：";
+    private static final String SPORT_TIP = "运动建议：";
 
     private static final int SDK_INT = 21;
+
+    public SwipeRefreshLayout swipeRefresh;
 
     private ScrollView scvWeatherLayout;
 
@@ -75,6 +78,8 @@ public class WeatherActivity extends AppCompatActivity {
 
     private ImageView ivBingPic;
 
+    private String mWeatherId;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -95,12 +100,13 @@ public class WeatherActivity extends AppCompatActivity {
         if (weatherString != null) {
             //有缓存时直接解析天气数据
             Weather weather = Utility.handleWeatherResponse(weatherString);
+            mWeatherId = weather.basic.weatherId;
             showWeatherInfo(weather);
         } else {
             //无缓存时去服务器查询天气数据
-            String weatherId = getIntent().getStringExtra(BUNDLE_WEATHER_ID);
+            mWeatherId = getIntent().getStringExtra(BUNDLE_WEATHER_ID);
             scvWeatherLayout.setVisibility(View.GONE);
-            requestWeather(weatherId);
+            requestWeather(mWeatherId);
         }
         //从缓存中取出背景图片路径
         String bingPic = prefs.getString(KEY_BING_PIC, null);
@@ -109,6 +115,14 @@ public class WeatherActivity extends AppCompatActivity {
         } else {
             loadBingPic();
         }
+        //刷新监听器
+        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                //刷新就重新请求服务器
+                requestWeather(mWeatherId);
+            }
+        });
     }
 
     private void initViews() {
@@ -124,6 +138,8 @@ public class WeatherActivity extends AppCompatActivity {
         tvCarWash = findViewById(R.id.tv_car_wash);
         tvSport = findViewById(R.id.tv_sport);
         ivBingPic = findViewById(R.id.iv_bing_pic);
+        swipeRefresh = findViewById(R.id.swipe_refresh);
+        swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
     }
 
     /**
@@ -144,6 +160,8 @@ public class WeatherActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         Toast.makeText(WeatherActivity.this, TIP, Toast.LENGTH_SHORT).show();
+                        //结束刷新
+                        swipeRefresh.setRefreshing(false);
                     }
                 });
             }
@@ -172,6 +190,8 @@ public class WeatherActivity extends AppCompatActivity {
                         } else {
                             Toast.makeText(WeatherActivity.this, TIP, Toast.LENGTH_SHORT).show();
                         }
+                        //结束刷新
+                        swipeRefresh.setRefreshing(false);
                     }
                 });
             }
@@ -217,7 +237,7 @@ public class WeatherActivity extends AppCompatActivity {
         }
         String comfort = COMFORT_TIP + weather.suggestion.comfort.info;
         String carWash = CAR_WASH_TIP + weather.suggestion.carWash.info;
-        String sport = SPoRT_TIP + weather.suggestion.sport.info;
+        String sport = SPORT_TIP + weather.suggestion.sport.info;
         tvComfort.setText(comfort);
         tvCarWash.setText(carWash);
         tvSport.setText(sport);
