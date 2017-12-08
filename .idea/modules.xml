@@ -2,11 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://D:\AndroidStudioProjects\ZhqWeather\zhqweather\ZhqWeather.iml" filepath="D:\AndroidStudioProjects\ZhqWeather\zhqweather\ZhqWeather.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://D:\AndroidStudioProjects\ZhqWeather\zhqweather\app\app.iml" filepath="D:\AndroidStudioProjects\ZhqWeather\zhqweather\app\app.iml" />
       <module fileurl="file://$PROJECT_DIR$/zhqweather.iml" filepath="$PROJECT_DIR$/zhqweather.iml" />
-      <module fileurl="file://D:\AndroidStudioProjects\ZhqWeather\zhqweather\zhqweather.iml" filepath="D:\AndroidStudioProjects\ZhqWeather\zhqweather\zhqweather.iml" />
     </modules>
   </component>
 </project>

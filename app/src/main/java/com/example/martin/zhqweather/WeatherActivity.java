@@ -1,14 +1,19 @@
 package com.example.martin.zhqweather;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -18,6 +23,7 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.example.martin.zhqweather.gson.Forecast;
 import com.example.martin.zhqweather.gson.Weather;
+import com.example.martin.zhqweather.service.AutoUpdateService;
 import com.example.martin.zhqweather.util.HttpUtil;
 import com.example.martin.zhqweather.util.Utility;
 
@@ -36,7 +42,7 @@ public class WeatherActivity extends AppCompatActivity {
 
     public static final String KEY_BING_PIC = "bing_pic";
 
-    private static final String KEY_OK = "ok";
+    public static final String KEY_OK = "ok";
 
     public static final String BUNDLE_WEATHER_ID = "weather_id";
 
@@ -51,6 +57,8 @@ public class WeatherActivity extends AppCompatActivity {
     private static final String SPORT_TIP = "运动建议：";
 
     private static final int SDK_INT = 21;
+
+    public DrawerLayout drawerLayout;
 
     public SwipeRefreshLayout swipeRefresh;
 
@@ -77,6 +85,8 @@ public class WeatherActivity extends AppCompatActivity {
     private TextView tvSport;
 
     private ImageView ivBingPic;
+
+    private Button btnNav;
 
     private String mWeatherId;
 
@@ -115,14 +125,7 @@ public class WeatherActivity extends AppCompatActivity {
         } else {
             loadBingPic();
         }
-        //刷新监听器
-        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                //刷新就重新请求服务器
-                requestWeather(mWeatherId);
-            }
-        });
+
     }
 
     private void initViews() {
@@ -139,15 +142,34 @@ public class WeatherActivity extends AppCompatActivity {
         tvSport = findViewById(R.id.tv_sport);
         ivBingPic = findViewById(R.id.iv_bing_pic);
         swipeRefresh = findViewById(R.id.swipe_refresh);
+        drawerLayout = findViewById(R.id.drawer_layout);
+        btnNav = findViewById(R.id.btn_nav);
+
         swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
+        //刷新监听器
+        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                //刷新就重新请求服务器
+                requestWeather(mWeatherId);
+            }
+        });
+        //点击btnNav弹出左侧滑动菜单
+        btnNav.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                drawerLayout.openDrawer(GravityCompat.START);
+            }
+        });
+
     }
 
     /**
      * 根据天气id请求城市信息
      * @param weatherId
      */
-    private void requestWeather(final String weatherId) {
-        String weatherUrl = "http://guolin.tech/api/weather?cityid=" + weatherId + "&key=bc0418b57b2d4918819d3974ac1285d9";
+    public void requestWeather(final String weatherId) {
+        String weatherUrl = "http://guolin.tech/api/weather?cityid=" + weatherId + "&key=ae1f8557e6e64cb982f17360d974dc3c";
         HttpUtil.sendOkHttpRequest(weatherUrl, new Callback() {
             /**
              * 请求失败，直接提示
@@ -187,6 +209,9 @@ public class WeatherActivity extends AppCompatActivity {
                             editor.apply();
                             //将weather展示到ui上
                             showWeatherInfo(weather);
+                            //将当前weatherId保留，因为该界面可能是左滑选择的城市，之前的处理刷新后还是
+                            // 会回到上一个城市
+                            mWeatherId = weatherId;
                         } else {
                             Toast.makeText(WeatherActivity.this, TIP, Toast.LENGTH_SHORT).show();
                         }
@@ -242,6 +267,9 @@ public class WeatherActivity extends AppCompatActivity {
         tvCarWash.setText(carWash);
         tvSport.setText(sport);
         scvWeatherLayout.setVisibility(View.VISIBLE);
+        //成功展示数据后，启动后台服务，每八小时更新一次天气信息和背景图片信息并保存到sp中。
+        Intent intent = new Intent(this, AutoUpdateService.class);
+        startService(intent);
     }
 
     /**
